@@ -38,16 +38,14 @@ const createNewAbbreviation = (originalUrl, done) => {
 
   const newAbbreviation = new Abbreviation();
   newAbbreviation.originalUrl = originalUrl;
-  newAbbreviation.urlId = createNewAbbreviationId;
+  newAbbreviation.urlId = createNewAbbreviationId();
 
-  newAbbreviation.save((err, data) => {
-    if (err) return console.log(err);
-    done(null, data);
-  });
+  newAbbreviation.save().then((x) => done(x)).catch((err) => console.log(err));
 };
 
 app.get('/', (req, res) => {
   res.sendFile(`${process.cwd()}/views/index.html`);
+  createNewAbbreviation('abcdef', (x) => console.log(x));
 });
 
 app.post('/api/shorturl', (req, res) => {
