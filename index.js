@@ -40,7 +40,7 @@ const createNewAbbreviation = (originalUrl, done) => {
   newAbbreviation.originalUrl = originalUrl;
   newAbbreviation.urlId = createNewAbbreviationId();
 
-  newAbbreviation.save().then((x) => done(x)).catch((err) => console.log(err));
+  newAbbreviation.save().then((x) => done(null, x)).catch((err) => console.log(err));
 };
 
 app.get('/', (req, res) => {
