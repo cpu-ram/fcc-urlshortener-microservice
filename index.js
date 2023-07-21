@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const bodyParser=require('body-parser');
+const bodyParser = require('body-parser');
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -22,8 +22,8 @@ app.use(cors());
 app.use('/public', express.static(`${process.cwd()}/public`));
 
 const abbreviationSchema = new mongoose.Schema({
-  originalUrl: String,
-  urlId: Number,
+  original_url: String,
+  short_url: Number,
 });
 
 const Abbreviation = mongoose.model('Abbreviation', abbreviationSchema);
@@ -37,10 +37,10 @@ const createNewAbbreviation = (originalUrl, done) => {
   };
 
   const newAbbreviation = new Abbreviation();
-  newAbbreviation.originalUrl = originalUrl;
-  newAbbreviation.urlId = createNewAbbreviationId();
+  newAbbreviation.original_url = originalUrl;
+  newAbbreviation.short_url = createNewAbbreviationId();
 
-  newAbbreviation.save().then((x) => done(null, x)).catch((err) => console.log(err));
+  newAbbreviation.save().then((x) => done(null, x.toObject())).catch((err) => console.log(err));
 };
 
 app.get('/', (req, res) => {
@@ -52,7 +52,9 @@ app.post('/api/shorturl', (req, res) => {
   const originalUrl = req.body.url;
   createNewAbbreviation(originalUrl, (err, abbreviation) => {
     if (err) console.log(err);
-    res.json(abbreviation);
+    const result = Object.keys(abbreviation).filter((x) => (!['__v', '_id'].includes(x))).reduce((accum, field) => Object.assign(accum, { [field]: abbreviation[field] }), {});
+
+    res.json(result);
   });
 });
 
