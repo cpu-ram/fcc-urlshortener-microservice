@@ -63,15 +63,17 @@ app.get('/', (req, res) => {
   res.sendFile(`${process.cwd()}/views/index.html`);
 });
 
+app.get('/api/shorturl/:shorturl', (req, res) => {
+  Abbreviation.findOne({ short_url: req.params.shorturl }).exec()
+    .then((result) => {
+      if (result !== null) {
+        return res.redirect(result.original_url);
+      } return res.json({ error: 'No short url found for the given input.' });
+    }, (err) => res.json(err));
+});
 app.post('/api/shorturl', (req, res) => {
   const entryUrl = req.body.url;
   if (!validateUrl(entryUrl)) return res.json({ error: 'Invalid URL' });
-
-  const neededProperties = ['original_url', 'short_url'];
-  const selectObjectProperties = (obj, fieldsArr) => (
-    Object.keys(obj).filter((x) => (fieldsArr.includes(x)))
-      .reduce((accum, field) => Object.assign(accum, { [field]: obj[field] }), {})
-  );
 
   Abbreviation.findOne({ original_url: entryUrl }).exec()
     .then((result) => {
