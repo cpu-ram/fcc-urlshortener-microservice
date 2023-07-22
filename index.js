@@ -27,7 +27,7 @@ const abbreviationSchema = new mongoose.Schema({
 });
 
 const validateUrl = (entryUrl) => {
-  const regex = /https?:\/\/(www\.)?\w+\.[a-zA-Z]+/;
+  const regex = /https?:\/\/(www\.)?[\w-]+\.[a-zA-Z]+.+/;
   return regex.test(entryUrl);
 };
 
