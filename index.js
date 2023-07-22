@@ -33,8 +33,17 @@ const validateUrl = (entryUrl) => {
 
 const Abbreviation = mongoose.model('Abbreviation', abbreviationSchema);
 
-const createNewAbbreviation = (originalUrl, done) => { 
-  // will break once a certain number of abbreviations is reached!
+const formatReturnedAbbreviation = (queryResult) => {
+  const neededProperties = ['original_url', 'short_url'];
+  const selectObjectProperties = (obj, fieldsArr) => (
+    Object.keys(obj).filter((x) => (fieldsArr.includes(x)))
+      .reduce((accum, field) => Object.assign(accum, { [field]: obj[field] }), {})
+  );
+  return selectObjectProperties(queryResult.toObject(), neededProperties);
+};
+
+const createNewAbbreviation = (originalUrl, done) => {
+  // will break once a certain number of records is reached!
   const createNewAbbreviationId = () => {
     const newUrlId = Math.floor(Math.random() * 100000);
     if (!Abbreviation.find({ urlId: newUrlId }) === []) {
@@ -46,28 +55,35 @@ const createNewAbbreviation = (originalUrl, done) => {
   newAbbreviation.original_url = originalUrl;
   newAbbreviation.short_url = createNewAbbreviationId();
 
-  newAbbreviation.save().then((x) => done(null, x.toObject())).catch((err) => console.log(err));
+  newAbbreviation.save().then((x) => done(null, formatReturnedAbbreviation(x)))
+    .catch((err) => done(err));
 };
 
 app.get('/', (req, res) => {
   res.sendFile(`${process.cwd()}/views/index.html`);
-  createNewAbbreviation('abcdef', (x) => console.log(x));
 });
 
 app.post('/api/shorturl', (req, res) => {
-  const filterObjectFields = (obj, fieldsArr) => (
-    Object.keys(obj).filter((x) => (!fieldsArr.includes(x)))
+  const entryUrl = req.body.url;
+  if (!validateUrl(entryUrl)) return res.json({ error: 'Invalid URL' });
+
+  const neededProperties = ['original_url', 'short_url'];
+  const selectObjectProperties = (obj, fieldsArr) => (
+    Object.keys(obj).filter((x) => (fieldsArr.includes(x)))
       .reduce((accum, field) => Object.assign(accum, { [field]: obj[field] }), {})
   );
-  const entryUrl = req.body.url;
-  if (!validateUrl(entryUrl)) res.json({ error: 'Invalid URL' });
-  const existingRecord = Abbreviation.findOne({ originalUrl: entryUrl });
 
-  createNewAbbreviation(entryUrl, (err, abbreviation) => {
-    if (err) console.log(err);
-    const result = Object.keys(abbreviation).filter((x) => (!['__v', '_id'].includes(x))).reduce((accum, field) => Object.assign(accum, { [field]: abbreviation[field] }), {});
-    res.json(result);
-  });
+  Abbreviation.findOne({ original_url: entryUrl }).exec()
+    .then((result) => {
+      if (result !== null) {
+        res.json(formatReturnedAbbreviation(result));
+      } else {
+        createNewAbbreviation(entryUrl, (err, abbreviation) => {
+          if (err) res.json(err);
+          else res.json(abbreviation);
+        });
+      }
+    }, (error) => res.json(error));
 });
 
 app.listen(port, () => {
