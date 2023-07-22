@@ -26,9 +26,15 @@ const abbreviationSchema = new mongoose.Schema({
   short_url: Number,
 });
 
+const validateUrl = (entryUrl) => {
+  const regex=/https?:\/\/www\.\w+\.[a-zA-Z]+/;
+  return regex.test(entryUrl);
+};
+
 const Abbreviation = mongoose.model('Abbreviation', abbreviationSchema);
 
-const createNewAbbreviation = (originalUrl, done) => {
+const createNewAbbreviation = (originalUrl, done) => { 
+  // will break once a certain number of abbreviations is reached!
   const createNewAbbreviationId = () => {
     const newUrlId = Math.floor(Math.random() * 100000);
     if (!Abbreviation.find({ urlId: newUrlId }) === []) {
@@ -49,11 +55,17 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/shorturl', (req, res) => {
-  const originalUrl = req.body.url;
-  createNewAbbreviation(originalUrl, (err, abbreviation) => {
+  const filterObjectFields = (obj, fieldsArr) => (
+    Object.keys(obj).filter((x) => (!fieldsArr.includes(x)))
+      .reduce((accum, field) => Object.assign(accum, { [field]: obj[field] }), {})
+  );
+  const entryUrl = req.body.url;
+  if (!validateUrl(entryUrl)) res.json({ error: 'Invalid URL' });
+  const existingRecord = Abbreviation.findOne({ originalUrl: entryUrl});
+
+  createNewAbbreviation(entryUrl, (err, abbreviation) => {
     if (err) console.log(err);
     const result = Object.keys(abbreviation).filter((x) => (!['__v', '_id'].includes(x))).reduce((accum, field) => Object.assign(accum, { [field]: abbreviation[field] }), {});
-
     res.json(result);
   });
 });
