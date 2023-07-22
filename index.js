@@ -27,7 +27,7 @@ const abbreviationSchema = new mongoose.Schema({
 });
 
 const validateUrl = (entryUrl) => {
-  const regex=/https?:\/\/www\.\w+\.[a-zA-Z]+/;
+  const regex = /https?:\/\/(www\.)?\w+\.[a-zA-Z]+/;
   return regex.test(entryUrl);
 };
 
@@ -61,7 +61,7 @@ app.post('/api/shorturl', (req, res) => {
   );
   const entryUrl = req.body.url;
   if (!validateUrl(entryUrl)) res.json({ error: 'Invalid URL' });
-  const existingRecord = Abbreviation.findOne({ originalUrl: entryUrl});
+  const existingRecord = Abbreviation.findOne({ originalUrl: entryUrl });
 
   createNewAbbreviation(entryUrl, (err, abbreviation) => {
     if (err) console.log(err);
